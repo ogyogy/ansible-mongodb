@@ -1,0 +1,41 @@
+- hosts: db
+
+  tasks:
+    - name: SELinux を無効化
+      selinux:
+        state: disabled
+
+    - name: MongoDB のポート (27017) を開放
+      firewalld:
+        port: 27017/tcp
+        permanent: yes
+        immediate: yes 
+        state: enabled
+
+    - name: MongoDB の RPM パッケージをコピー
+      copy:
+        src: "{{ item }}"
+        dest: /tmp/
+      with_fileglob:
+        - "/tmp/mongodb-*.rpm"
+
+    - name: MongoDB の RPM パッケージをインストール
+      yum:
+        name:
+          - /tmp/mongodb-org-3.6.13-1.el7.x86_64.rpm
+          - /tmp/mongodb-org-mongos-3.6.13-1.el7.x86_64.rpm
+          - /tmp/mongodb-org-server-3.6.13-1.el7.x86_64.rpm
+          - /tmp/mongodb-org-shell-3.6.13-1.el7.x86_64.rpm
+          - /tmp/mongodb-org-tools-3.6.13-1.el7.x86_64.rpm
+        state: present
+
+    - name: MongoDB の設定ファイルをコピー
+      copy:
+        src: /tmp/mongod.conf
+        dest: /etc/mongod.conf
+
+    - name: MongoDB を起動
+      systemd:
+        name: mongod
+        state: started
+        enabled: yes

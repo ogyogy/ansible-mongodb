@@ -1,0 +1,37 @@
+- hosts: db[0]
+
+  vars:
+    deploy_replica_set: /tmp/deploy-replica-set.js
+    first_primary: "{{ groups['db'][0] }}"
+    first_secondary: "{{ groups['db'][1] }}"
+    first_arbiter: "{{ groups['db'][2] }}"
+
+
+  tasks:
+    - name: MongoDB のレプリカセット構築設定 (Javascript) をコピー
+      copy:
+        src: "{{ deploy_replica_set }}"
+        dest: "{{ deploy_replica_set }}"
+
+    - name: MongoDB のレプリカセット構築設定のホストを書き換え (Primary)
+      replace:
+        path: "{{ deploy_replica_set }}"
+        regexp: "mongodb_primary"
+        replace: "{{ first_primary }}"
+
+    - name: MongoDB のレプリカセット構築設定のホストを書き換え (Secondary)
+      replace:
+        path: "{{ deploy_replica_set }}"
+        regexp: "mongodb_secondary"
+        replace: "{{ first_secondary }}"
+
+    - name: MongoDB のレプリカセット構築設定のホストを書き換え (Arbiter)
+      replace:
+        path: "{{ deploy_replica_set }}"
+        regexp: "mongodb_arbiter"
+        replace: "{{ first_arbiter }}"
+
+    - name: MongoDB のレプリカセット構築
+      shell: "cat {{ deploy_replica_set }} | mongo > /tmp/deploy.log"
+      args:
+        creates: /tmp/deploy.log
